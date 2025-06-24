@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'python:3.10'
+            args '-u root:root'  // Optional: Run as root if needed for permissions
+        }
+    }
 
     stages {
         stage('Checkout') {
@@ -10,14 +15,13 @@ pipeline {
 
         stage('Install dependencies') {
             steps {
-                sh 'python3 -m venv venv'
-                sh '. venv/bin/activate && pip install -r requirements.txt'
+                sh 'pip install -r requirements.txt'
             }
         }
 
         stage('Run tests') {
             steps {
-                sh '. venv/bin/activate && pytest tests/'
+                sh 'pytest tests/'
             }
         }
     }
