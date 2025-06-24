@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+httpx
+sqlalchemy
+psycopg2-binary  # if you're using PostgreSQL
+apscheduler
+requests
+pydantic
+pytz
+python-dateutil
