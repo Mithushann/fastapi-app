@@ -15,13 +15,14 @@ pipeline {
 
         stage('Install dependencies') {
             steps {
-                sh 'pip install -r requirements.txt'
+                sh ' docker build -t fastapi-app .'
+                sh 'docker run -it --rm --env-file .env -p 8000:80 fastapi-app'
             }
         }
 
         stage('Run tests') {
             steps {
-                sh 'pytest tests/'
+                sh 'docker run --rm fastapi-app pytest tests/'
             }
         }
     }
