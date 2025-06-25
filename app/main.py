@@ -4,7 +4,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from app.routers import example, githubkpis
 from app.database.db import SessionLocal, engine
 from app.models import github_models
-from app.utils.fetch import fetch_contributors_and_save, fetch_pull_requests_and_save  # assumed to be SYNC
+from app.utils.fetch_github import fetch_contributors_and_save, fetch_pull_requests_and_save  # assumed to be SYNC
 
 from datetime import datetime
 import pytz
