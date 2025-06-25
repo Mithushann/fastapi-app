@@ -4,8 +4,8 @@ pipeline {
     stages {
         stage('Docker Test') {
             steps {
-                sh 'docker version'
-                sh 'docker run hello-world'
+                sh 'docker build -t fastapi-app .'
+                sh 'docker run -it --rm --env-file .env -p 8000:80 fastapi-app'
             }
         }
     }
