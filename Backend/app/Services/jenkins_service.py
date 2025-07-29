@@ -5,20 +5,38 @@ from app.models.jenkins_models import JenkinsBuild
 from app.database.db import SessionLocal
 from datetime import datetime
 from requests.auth import HTTPBasicAuth
+import os
 
-# Replace these with your Jenkins credentials and base URL
-JENKINS_URL = "http://your-jenkins-url"
-JENKINS_USER = "your-username"
-JENKINS_API_TOKEN = "your-token"
+# Base Jenkins URL and credentials from environment variables
+JENKINS_BASE_URL = os.getenv("JENKINS_BASE_URL", "https://c902-81-170-208-44.ngrok-free.app")
+JENKINS_USER = os.getenv("JENKINS_USER")
+JENKINS_TOKEN = os.getenv("JENKINS_TOKEN")
 
 def fetch_jenkins_builds(job_name: str):
-    url = f"{JENKINS_URL}/job/{job_name}/api/json?tree=builds[number,result,duration,timestamp]"
-    auth = HTTPBasicAuth(JENKINS_USER, JENKINS_API_TOKEN)
+    url = (
+        f"{JENKINS_BASE_URL}/job/{job_name}/api/json"
+        f"?tree=builds[number,result,duration,timestamp]"
+    )
+    auth = HTTPBasicAuth(JENKINS_USER, JENKINS_TOKEN)
+
     response = requests.get(url, auth=auth)
     response.raise_for_status()
+
     builds = response.json().get("builds", [])
-    print(f"✅ Fetched {len(builds)} builds from {job_name}")
-    return builds
+    detailed_builds = []
+
+    for build in builds:
+        detailed_builds.append({
+            "number": build.get("number"),
+            "result": build.get("result"),
+            "duration": (build.get("duration") or 0) / 1000,  # ms to sec
+            "timestamp": datetime.fromtimestamp(build.get("timestamp") / 1000)
+                if build.get("timestamp") else None,
+        })
+
+    print(f"✅ Fetched {len(detailed_builds)} builds with details from {job_name}")
+    return detailed_builds
+
 
 def save_jenkins_builds(db: Session, builds_data, job_name: str):
     print(f"Saving {len(builds_data)} builds to the database...")
@@ -26,25 +44,24 @@ def save_jenkins_builds(db: Session, builds_data, job_name: str):
     for build in builds_data:
         build_number = build.get("number")
         result = build.get("result")
-        duration_sec = build.get("duration", 0) / 1000  # Jenkins reports in ms
-        timestamp = datetime.fromtimestamp(build.get("timestamp", 0) / 1000)
+        duration_sec = build.get("duration")
+        timestamp = build.get("timestamp")
+        
 
         existing = db.query(JenkinsBuild).filter(
             JenkinsBuild.job_name == job_name,
-            JenkinsBuild.build_number == build_number
+            JenkinsBuild.build_number == build_number            
         ).first()
 
         if existing:
-            existing.result = result
-            existing.duration_sec = duration_sec
-            existing.timestamp = timestamp
+            existing.build_number = build_number
         else:
             new_build = JenkinsBuild(
                 job_name=job_name,
                 build_number=build_number,
                 result=result,
                 duration_sec=duration_sec,
-                timestamp=timestamp
+                timestamp=timestamp                
             )
             db.add(new_build)
 

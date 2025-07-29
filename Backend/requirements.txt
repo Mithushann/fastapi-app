@@ -6,5 +6,7 @@ psycopg2-binary  # if you're using PostgreSQL
 apscheduler
 requests
 pydantic
+pydantic[email]
 pytz
 python-dateutil
+cryptography
